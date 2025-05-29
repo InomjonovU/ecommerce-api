@@ -14,6 +14,7 @@ class CustomUser(AbstractUser):
 
 class UserCard(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    name = modele.CharField(max_length=100)
     card_number = models.CharField(max_length=16)
     expiration_date = models.DateField()
 
