@@ -1,7 +1,8 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
-class CustomUser(models.Model):
-    notlification_type = models.BooleanField(default=True)
+class CustomUser(AbstractUser):
+    notlification_type = models.BooleanField(default=True, null=True, blank=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
 
     def __str__(self):
