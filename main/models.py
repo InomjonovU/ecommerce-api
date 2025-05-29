@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
-    notlification_type = models.BooleanField(default=True, null=True, blank=True)
+    notification_type = models.BooleanField(default=True, blank=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
 
     def __str__(self):
@@ -16,7 +16,6 @@ class UserCard(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     card_number = models.CharField(max_length=16)
     expiration_date = models.DateField()
-    cvv = models.CharField(max_length=3)
 
     def __str__(self):
         return f"{self.user.username} - {self.card_number}"
@@ -37,7 +36,7 @@ class UserAddress(models.Model):
     pincode = models.CharField(max_length=6)
 
     def __str__(self):
-        return f"{self.user.username} - {self.address}"
+        return f"{self.user.username} - {self.house_number}, {self.street}, {self.city}"
 
     class Meta:
         verbose_name = 'User Address'
@@ -108,12 +107,13 @@ class ProductRating(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.product.name} - {self.rating}"
-
     class Meta:
         verbose_name = 'Product Rating'
         verbose_name_plural = 'Product Ratings'
+        unique_together = ('product', 'user')
+
+    def __str__(self):
+        return f"{self.product.name} - {self.rating}"
 
 class ProductComment(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -121,62 +121,67 @@ class ProductComment(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.product.name} - {self.comment}"
-
     class Meta:
         verbose_name = 'Product Comment'
         verbose_name_plural = 'Product Comments'
+
+    def __str__(self):
+        return f"{self.product.name} - {self.comment[:20]}"
 
 class Like(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
-    def __str__(self):
-        return f"{self.user.username} - {self.product.name}"
-
     class Meta:
         verbose_name = 'Like'
         verbose_name_plural = 'Likes'
+        unique_together = ('user', 'product')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.product.name}"
 
 class Cart(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.user.username} - {self.product.name}"
-
     class Meta:
         verbose_name = 'Cart'
         verbose_name_plural = 'Carts'
+
+    def __str__(self):
+        return f"{self.user.username} - Cart"
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
 
-    def __str__(self):
-
-        return f"{self.cart.user.username} - {self.product.name}"
-
     class Meta:
         verbose_name = 'Cart Item'
         verbose_name_plural = 'Cart Items'
+        unique_together = ('cart', 'product')
+
+    def __str__(self):
+        return f"{self.cart.user.username} - {self.product.name}"
 
 class Order(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     card = models.ForeignKey(UserCard, on_delete=models.CASCADE)
-    status = models.CharField(max_length=100, choices=[('in_progress', 'In Progress'), ('pending', 'Pending'), ('delivered', 'Delivered')])
+    status = models.CharField(max_length=100, choices=[
+        ('in_progress', 'In Progress'),
+        ('pending', 'Pending'),
+        ('delivered', 'Delivered')
+    ])
     created_at = models.DateTimeField(auto_now_add=True)
-    addres = models.ForeignKey(UserAddress, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"{self.user.username} - {self.product.name}"
+    address = models.ForeignKey(UserAddress, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Order'
         verbose_name_plural = 'Orders'
+
+    def __str__(self):
+        return f"{self.user.username} - Order #{self.id}"
 
 class PromoCode(models.Model):
     code = models.CharField(max_length=100)
@@ -190,4 +195,3 @@ class PromoCode(models.Model):
     class Meta:
         verbose_name = 'Promo Code'
         verbose_name_plural = 'Promo Codes'
-
